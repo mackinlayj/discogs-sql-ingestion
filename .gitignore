@@ -205,3 +205,10 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# IMPORTANT: SECRETS FROM DISCOGS TO SQL SCRIPT
+.env
+venv/
+.venv
+__pycache__/
+
