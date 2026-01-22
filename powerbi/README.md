@@ -3,6 +3,8 @@ This folder contains Power BI assets related to the Discogs dashboarding project
 
 The Power BI layer is intentionally kept separate from data extraction and transformation logic. All data consumed by Power BI is sourced from SQL Server tables created by the ETL pipeline. 
 
+---
+
 ## Recommended Workflow 
 1. Run the ETL pipeline
     - Execute the Python ingestion script to populate or refresh the SQL Server database.
