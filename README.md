@@ -66,6 +66,28 @@ Because Power BI connects directly to SQL Server, visualizations remain decouple
 
 ---
 
+## Configuration (Environment Variables)
+
+This project uses environment variables to manage API credentials and database connection details. Secrets are **never committed** to the repo. 
+
+At the root of the repository, you will find a file named: .env.template
+- This file documents all required environment variables but contains no sensitive values. It serves as a starting point for local configuration.
+
+Setup:
+1. Copy the template file
+     ```bash
+     cp .env.template .env
+     ```
+2. Populate the .env with:
+     - Your Discogs personal access token
+     - Your Discogs username
+     - SQL Server connection details
+3. Do not commit .env:
+     - The .env file is intentionally ignored via .gitignore
+     - This ensures credentials remain local and private
+
+The ETL script automatically loads configuration from the repository root. If an .env file is present, it is used by default; otherwise, the script will attempt to load the values from .env.template. If required variables are missing, the script fails fast with a clear error message.
+
 ## Getting Started
 
 ### Prerequisites
@@ -79,7 +101,7 @@ Because Power BI connects directly to SQL Server, visualizations remain decouple
 1. Clone the repository
 2. Create and activate a Python virtual environment
 3. Install required Python dependencies
-4. Configure Discogs API credentials
+4. Configure Discogs API credentials via environment variables
 5. Run ingestion scripts to populate the SQL database
 6. Connect Power BI to SQL Server for visualization
 
@@ -89,3 +111,4 @@ Because Power BI connects directly to SQL Server, visualizations remain decouple
 - Discogs metadata is user-generated and may contain inconsistencies
 - Data reflects the state of the collection at the time of extraction
 - All data ingested belongs solely to the authenticated Discogs user
+
