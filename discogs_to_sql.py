@@ -2,7 +2,7 @@
 Discogs -> SQL Server ETL Pipeline
 
 This script:
-1. Loads configuration from a .env file
+1. Loads configuration from a .env file (preferred) or .env.template (fallback)
 2. Connects to the Discogs API using a personal access token
 3. Pulls a user's full Discogs collection (with pagination)
 4. Normalizes the nested JSON responses into relational tables
@@ -16,7 +16,7 @@ Designed for:
 Author: Jacob MacKinlay
 """
 
-import os     # Read environment variables                                       
+import os     # Read environment variables
 import time   # Sleep between API requests
 import json   # Serialize Discogs "notes" safely for SQL
 from dataclasses import dataclass
@@ -30,14 +30,53 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 
+
 # -----------------------------------------------------------------
 # Environment variable loading
 # -----------------------------------------------------------------
+# Goal:
+# - Keep secrets out of git by default using a local `.env` (ignored by .gitignore)
+# - Also support a convenience workflow where someone edits `.env.template` and runs the script
+#   without needing to rename/copy files.
+#
+# Loading order:
+# 1) If repo root contains `.env`, load it
+# 2) Else, load `.env.template` (if it exists)
+#
+# Note: `.env.template` should ideally remain a template (blank) in git. If users put secrets in
+# `.env.template`, they should NOT commit/push it.
 
-# Always laod the .env file that sits next to this script
-# This avoids issues where VS Code / Powershell run from a different directory
 
-load_dotenv(dotenv_path=Path(__file__).with_name(".env"))
+def find_repo_root(start: Path) -> Path:
+    """
+    Walk upward from this file until we find a directory that looks like the repo root.
+    Markers we accept:
+      - .git folder (most reliable)
+      - README.md (common)
+      - .env.template (for this project)
+    """
+    for p in [start] + list(start.parents):
+        if (p / ".git").exists() or (p / "README.md").exists() or (p / ".env.template").exists():
+            return p
+    return start.parent  # fallback
+
+
+REPO_ROOT = find_repo_root(Path(__file__).resolve())
+ENV_PATH = REPO_ROOT / ".env"
+ENV_TEMPLATE_PATH = REPO_ROOT / ".env.template"
+
+# Prefer `.env` if present; otherwise fall back to `.env.template`
+if ENV_PATH.exists():
+    load_dotenv(dotenv_path=ENV_PATH)
+else:
+    # If template doesn't exist either, fail early with clear instructions
+    if not ENV_TEMPLATE_PATH.exists():
+        raise RuntimeError(
+            f"Could not find {ENV_PATH.name} or {ENV_TEMPLATE_PATH.name} in repo root: {REPO_ROOT}\n"
+            "Create a `.env` file by copying `.env.template`, then fill in values."
+        )
+    load_dotenv(dotenv_path=ENV_TEMPLATE_PATH)
+
 
 # -----------------------------------------------------------------
 # Configuration
@@ -79,7 +118,14 @@ def get_config() -> Config:
     )
 
     if missing:
-        raise RuntimeError(f"Missing required environment variables: {', '.join(missing)}")
+        raise RuntimeError(
+            "Missing required environment variables: "
+            f"{', '.join(missing)}\n\n"
+            "Set them in one of the following files at the repo root:\n"
+            f"  - {ENV_PATH} (recommended; ignored by git)\n"
+            f"  - {ENV_TEMPLATE_PATH} (fallback; do NOT commit secrets)\n\n"
+            "Tip: Copy `.env.template` to `.env` and fill it in."
+        )
 
     return cfg
 
@@ -89,7 +135,7 @@ def get_config() -> Config:
 # -----------------------------------------------------------------
 
 class DiscogsClient:
-    # Responsibilities: authentication, pagination, rate limiing, retries
+    # Responsibilities: authentication, pagination, rate limiting, retries
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.base_url = "https://api.discogs.com"
@@ -107,8 +153,8 @@ class DiscogsClient:
         retry=retry_if_exception_type(requests.RequestException),
     )
     def get(self, path: str, params: Optional[dict] = None) -> Dict[str, Any]:
-        #Perform a GET request with retries for transient errors
-        #Retries on: rate limits (429) and temporary server errors (5xx)
+        # Perform a GET request with retries for transient errors
+        # Retries on: rate limits (429) and temporary server errors (5xx)
         url = f"{self.base_url}{path}"
         resp = self.session.get(url, params=params, timeout=30)
 
@@ -120,7 +166,7 @@ class DiscogsClient:
         return resp.json()
 
     def paginate(self, path: str, params: Optional[dict] = None) -> Iterable[Dict[str, Any]]:
-        # Generator that yeilds all items across paginated Discogs endpoints
+        # Generator that yields all items across paginated Discogs endpoints
         page = 1
         params = dict(params or {})
         params.setdefault("per_page", 100)
@@ -158,7 +204,7 @@ def make_engine(cfg: Config) -> Engine:
 
 def init_schema(engine: Engine) -> None:
     # Create all required tables if they do not already exist
-    # This allows: first time setiup and safe reruns without dropping data
+    # This allows: first time setup and safe reruns without dropping data
     ddl = """
     IF OBJECT_ID('dbo.discogs_release', 'U') IS NULL
     CREATE TABLE dbo.discogs_release (
@@ -355,7 +401,7 @@ def upsert_bridge(engine: Engine, table: str, release_id: int, col: str, value: 
 # -----------------------------------------------------------------
 
 def normalize_release_from_collection_item(item: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    # Convert a single Discogs collection item (nested JSON) into two flat relational rows: 
+    # Convert a single Discogs collection item (nested JSON) into two flat relational rows:
     # 1) discogs_release, and 2) discogs_collection_item
     # This is the key transformation step in the pipeline
     basic = item.get("basic_information", {}) or {}
@@ -402,7 +448,7 @@ def normalize_release_from_collection_item(item: Dict[str, Any]) -> Tuple[Dict[s
 # -----------------------------------------------------------------
 
 def ingest_collection(cfg: Config) -> None:
-    # Orchestrates the full ETL process: 1) connect to API, 2) connect to SQL server, 
+    # Orchestrates the full ETL process: 1) connect to API, 2) connect to SQL server,
     # 3) ensure schema exists, 4) pull Discogs collection, and 5) upsert all related entities
     print(f"Loaded SQL_SERVER: {cfg.sql_server}")
 
