@@ -37,7 +37,7 @@ from sqlalchemy.engine import Engine
 # Goal:
 # - Keep secrets out of git by default using a local `.env` (ignored by .gitignore)
 # - Also support a convenience workflow where someone edits `.env.template` and runs the script
-#   without needing to rename/copy files.
+#   without needing to rename/copy files
 #
 # Loading order:
 # 1) If repo root contains `.env`, load it
