@@ -21,13 +21,11 @@ Each component plays a specific role in ensuring data quality, transparency, and
 
 ## Components
 
-### Discogs API
+### 1. Discogs API
 
 Discogs provides authenticated API access that allows users to programmatically retrieve data related to their collection, wantlist, artists, releases, and related metadata. This API serves as the raw data source for the pipeline and supports automated, repeatable extraction.
 
----
-
-### Python (Extraction & Transformation)
+### 2. Python (Extraction & Transformation)
 
 Python is used to:
 - Authenticate and interact with the Discogs API
@@ -37,9 +35,7 @@ Python is used to:
 
 Separating extraction and transformation logic from visualization ensures reproducibility and makes the pipeline easier to test, extend, and maintain.
 
----
-
-### SQL Server (Data Storage)
+### 3. SQL Server (Data Storage)
 
 SQL Server is used as the persistent storage layer for transformed Discogs data.
 
@@ -53,9 +49,7 @@ By storing transformed data in SQL Server:
 - Data models remain stable for downstream reporting
 - Power BI consumes only curated, analytics-ready tables
 
----
-
-### Power BI (Analytics & Visualization)
+### 4. Power BI (Analytics & Visualization)
 
 Power BI is used to:
 - Define metrics and measures
@@ -66,7 +60,7 @@ Because Power BI connects directly to SQL Server, visualizations remain decouple
 
 ---
 
-## Configuration (Environment Variables)
+## Configuration of Environment Variables (.env)
 
 This project uses environment variables to manage API credentials and database connection details. Secrets are **never committed** to the repo. 
 
@@ -88,6 +82,8 @@ Setup:
 
 The ETL script automatically loads configuration from the repository root. If an .env file is present, it is used by default; otherwise, the script will attempt to load the values from .env.template. If required variables are missing, the script fails fast with a clear error message.
 
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -105,10 +101,24 @@ The ETL script automatically loads configuration from the repository root. If an
 5. Run ingestion scripts to populate the SQL database
 6. Connect Power BI to SQL Server for visualization
 
+---
+
 ## Data Scope & Assumptions
 
 - This pipeline is designed for personal Discogs accounts
 - Discogs metadata is user-generated and may contain inconsistencies
 - Data reflects the state of the collection at the time of extraction
 - All data ingested belongs solely to the authenticated Discogs user
+
+---
+
+## Additional Context Re: Data Storage
+
+For many personal or small-scale use cases, storing Discogs data in a relational database may seem unnecessary, as the data is largely non-sensitive and could be accessed directly from the Discogs API. This is a fair observation.
+
+However, this project intentionally models the data in SQL Server to reflect best practices in analytics and data engineering, even when working with relatively simple or low-risk datasets. Persisting transformed data provides clear advantages in terms of transparency, reproducibility, and governance, and mirrors how similar pipelines are implemented in production environments.
+
+That said, users who prefer a lighter-weight approach may choose to skip the database layer entirely and make API calls directly from Power Query within Power BI. While this can be suitable for quick exploration or one-off dashboards, it comes with trade-offs around long-term scalability.
+
+This repository is designed to demonstrate a robust, extensible pattern that prioritizes clean data modeling and separation of concerns, while still allowing flexibility for alternative workflows.
 
