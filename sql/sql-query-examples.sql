@@ -81,4 +81,3 @@ GROUP BY
     r.year,
     c.date_added
 ORDER BY date_added DESC;
-
