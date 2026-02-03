@@ -59,7 +59,7 @@ This project uses environment variables to manage API credentials and database c
 The repository includes a template file located in src/:
 - src/.env.template - documents all required environment variables and serves as a starting point for local configuration.
 
-**Note**: the .gitingore file is instructed to not commit the .env.template file. Therefore, the data you store here will remain locally contained. 
+**Note**: Once you have cloned the repo, ensure you add the .env.template file to the .gitignore file. Once this is done, the data you store here will remain locally contained (especially if working with git).
 
 Setup:
 1. Copy the template file
@@ -69,7 +69,7 @@ Setup:
      - Your Discogs username
      - SQL Server connection details
 3. Do not commit .env.template:
-     - The .env file is intentionally ignored via .gitignore
+     - Add the .env.template file to the .gitignore file (at the repo root) 
      - This ensures credentials remain local and private
 
 The ingestion script automatically loads configuration from the repository root and fails fast with a clear message if required variables are missing.
@@ -133,3 +133,4 @@ However, this project intentionally models the data in SQL Server to reflect bes
 Users who prefer a lighter-weight workflow may choose to query the Discogs API directly from tools such as Power Query. While suitable for quick exploration, this approach shifts transformation logic into the visualization layer and reduces reuse.
 
 This repository is designed to demonstrate a robust, extensible ingestion pattern that prioritizes clean data modeling while still allowing flexibility for alternative downstream workflows.
+
