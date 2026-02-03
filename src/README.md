@@ -6,7 +6,7 @@ This folder contains the Python source code responsible for extracting data from
 
 ## Main Script
 
-### `discogs_to_sql.py`
+### discogs_to_sql.py
 
 This script performs the full end-to-end ETL process:
 
