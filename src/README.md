@@ -24,15 +24,13 @@ The script is safe to run multiple times and will update existing records withou
 ## Configuration
 
 All configuration is handled via environment variables.  
-See `.env.template` in the repository root for required values and documentation.
+See .env.template in the ./src folder for required values and documentation.
 
 No credentials or secrets should be committed to source control.
 
 ---
 
 ## Execution
-
-From the repository root:
 
 ```bash
 python src/discogs_to_sql.py
