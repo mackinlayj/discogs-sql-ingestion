@@ -2,9 +2,11 @@
 
 ## Overview
 
-Discogs provides a built-in web interface for exploring collection and wantlist data; however, its analytical and customization capabilities are limited. While basic metrics (e.g., collection size or high-level categorizations) are available, users have little control over how data is transformed, combined, or visualized.
+Discogs provides a built-in web interface for browsing personal collections and wantlists; however, its analytical and customaization capabilities are limited. While basic metrics are available, users have little control over how data is transformed, combined, or reused across projects. 
 
-This repository documents an end-to-end pipeline for extracting personal Discogs data via the Discogs API, performing structured transformations, storing the cleaned data in a relational database, and creating custom, shareable visualizations in Power BI. The goal is to enable flexible, reproducible, and privacy-conscious analytics beyond what the native Discogs interface supports.
+This repository focuses on building a reproducible Python-based ingestion pipeline that extracts data from the Discogs API, normalizes the nested responses, and persists the results in a relational SQL Server database. The primary goal is to centralize Discogs data in a structured, queryable format that can serve as a reliable foundation for downstream analysis, reporting, or experimentation.
+
+Rather than trying the worflow to a single analytics tool, this project treats SQL Server as the system of record, enabling the data to be reused across multiple contexts (e.g., ad hoc SQL analysis, dashboards, notebooks, etc.)
 
 ---
 
@@ -12,10 +14,14 @@ This repository documents an end-to-end pipeline for extracting personal Discogs
 
 The data pipeline follows a simple and intentional design:
 
-Discogs API → Python → SQL Server → Power BI
+Discogs API → Python → SQL Server 
 
+Each layer has a clearly defined responsibility:
+- The Discogs API provides raw, user-scoped metadata
+- Python handles extraction, transformation, and normalization
+- SQL Server stores curated, analytics-ready tables
 
-Each component plays a specific role in ensuring data quality, transparency, and analytical flexibility.
+While downstream tools such as Power BI can typically connect to the Discogs API, doing so is not considered best practice - especially when dashboards are shared or published.
 
 ---
 
@@ -33,30 +39,16 @@ Python is used to:
 - Normalize nested JSON responses into tabular structures
 - Perform initial data cleaning and transformations prior to storage
 
-Separating extraction and transformation logic from visualization ensures reproducibility and makes the pipeline easier to test, extend, and maintain.
+Note: All transformation logic lives in Python.
 
 ### 3. SQL Server (Data Storage)
 
 SQL Server is used as the persistent storage layer for transformed Discogs data.
 
-Although Power BI is technically capable of making direct API calls, this approach is discouraged for several reasons:
-- API-driven dashboards expose raw data structures
-- Transformations become opaque and harder to audit
-- Shared or published dashboards may unintentionally expose sensitive or unnecessary data
-
-By storing transformed data in SQL Server:
-- Business logic is centralized and transparent
-- Data models remain stable for downstream reporting
-- Power BI consumes only curated, analytics-ready tables
-
-### 4. Power BI (Analytics & Visualization)
-
-Power BI is used to:
-- Define metrics and measures
-- Build interactive dashboards
-- Explore trends across collection attributes (e.g., genres, formats, acquisition timelines)
-
-Because Power BI connects directly to SQL Server, visualizations remain decoupled from data extraction logic, supporting cleaner governance and easier iteration.
+Persisting the data in a relational database provides several benefits:
+- Logic is centralized and transparent
+- Nested API responses are converted into stable, relational tables
+- Data can be queried and reused independently; data models remain stable for downstream reporting
 
 ---
 
@@ -64,8 +56,9 @@ Because Power BI connects directly to SQL Server, visualizations remain decouple
 
 This project uses environment variables to manage API credentials and database connection details. Secrets are **never committed** to the repo. 
 
-At the root of the repository, you will find a file named: .env.template
-- This file documents all required environment variables but contains no sensitive values. It serves as a starting point for local configuration.
+At the root of the repo, you will find:
+- .env.template: documents all required environment variables with descriptions
+- .env: your local configuration file (ignored by Git)
 
 Setup:
 1. Copy the template file
@@ -80,7 +73,7 @@ Setup:
      - The .env file is intentionally ignored via .gitignore
      - This ensures credentials remain local and private
 
-The ETL script automatically loads configuration from the repository root. If an .env file is present, it is used by default; otherwise, the script will attempt to load the values from .env.template. If required variables are missing, the script fails fast with a clear error message.
+The ingestion script automatically loads configuration from the repository root and fails fast with a clear message if required variables are missing.
 
 ---
 
@@ -89,7 +82,6 @@ The ETL script automatically loads configuration from the repository root. If an
 ### Prerequisites
 - Python 3.9+
 - SQL Server Express
-- Power BI Desktop
 - Discogs API personal access token  
 - A Discogs account (a lovingly curated vinyl collection helps)
 
@@ -99,7 +91,28 @@ The ETL script automatically loads configuration from the repository root. If an
 3. Install required Python dependencies
 4. Configure Discogs API credentials via environment variables
 5. Run ingestion scripts to populate the SQL database
-6. Connect Power BI to SQL Server for visualization
+
+---
+
+## Using the Data for Downstream Projects
+
+Once ingested, the Discogs data stored in SQL can be reused for a wide range of individual projects, including:
+- Ad hoc SQL analysis
+- Exploratory notebooks
+- Custom applications
+- Dashboarding (e.g., Power BI)
+
+### Example - Connecting from Power BI
+
+If you choose to use Power BI for dashboarding efforts:
+
+1. Open Power BI Desktop
+2. Select Get Data -> SQL Server
+3. Enter your SQL Server instance and database
+4. Import tables directly or connect to SQL views
+5. Refresh data after rerunning the ingestion script
+
+Because Power BI connects to SQL rather than the API, dashboards remain decoupled from extraction logic and benefit from a stable, well-defined schema. This setup also enables refreshes to be automated or scheduled as needed, allowing reports to stay up-to-date as the ingestion pipeline is rerun. For more information on this automated refresh schedules, check out this article by Microsoft: [Data Refresh in Power BI](https://learn.microsoft.com/en-us/power-bi/connect-data/refresh-data).
 
 ---
 
@@ -118,7 +131,7 @@ For many personal or small-scale use cases, storing Discogs data in a relational
 
 However, this project intentionally models the data in SQL Server to reflect best practices in analytics and data engineering, even when working with relatively simple or low-risk datasets. Persisting transformed data provides clear advantages in terms of transparency, reproducibility, and governance, and mirrors how similar pipelines are implemented in production environments.
 
-That said, users who prefer a lighter-weight approach may choose to skip the database layer entirely and make API calls directly from Power Query within Power BI. While this can be suitable for quick exploration or one-off dashboards, it comes with trade-offs around long-term scalability.
+Users who prefer a lighter-weight workflow may choose to query the Discogs API directly from tools such as Power Query. While suitable for quick exploration, this approach shifts transformation logic into the visualization layer and reduces reuse.
 
-This repository is designed to demonstrate a robust, extensible pattern that prioritizes clean data modeling and separation of concerns, while still allowing flexibility for alternative workflows.
+This repository is designed to demonstrate a robust, extensible ingestion pattern that prioritizes clean data modeling while still allowing flexibility for alternative downstream workflows.
 
