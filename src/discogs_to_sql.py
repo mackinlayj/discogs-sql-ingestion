@@ -10,7 +10,7 @@ This script:
 
 Designed for:
 - SQL Server (Windows Authentication)
-- Power BI
+- Data visualization in downstream applications (e.g., Power BI)
 - Reruns (safe to run multiple times)
 
 Author: Jacob MacKinlay
