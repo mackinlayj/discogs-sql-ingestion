@@ -208,7 +208,7 @@ __marimo__/
 
 # IMPORTANT: SECRETS FROM DISCOGS TO SQL SCRIPT
 .env
-.env.template
+## .env.template -> add this once cloned locally.
 venv/
 .venv
 __pycache__/
