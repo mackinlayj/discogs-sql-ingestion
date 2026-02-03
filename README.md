@@ -56,20 +56,19 @@ Persisting the data in a relational database provides several benefits:
 
 This project uses environment variables to manage API credentials and database connection details. Secrets are **never committed** to the repo. 
 
-At the root of the repo, you will find:
-- .env.template: documents all required environment variables with descriptions
-- .env: your local configuration file (ignored by Git)
+The repository includes a template file located in src/:
+- src/.env.template - documents all required environment variables and serves as a starting point for local configuration.
+
+**Note**: the .gitingore file is instructed to not commit the .env.template file. Therefore, the data you store here will remain locally contained. 
 
 Setup:
 1. Copy the template file
-     ```bash
-     cp .env.template .env
-     ```
-2. Populate the .env with:
+     - cp .env.template
+2. Populate the .env.template with:
      - Your Discogs personal access token
      - Your Discogs username
      - SQL Server connection details
-3. Do not commit .env:
+3. Do not commit .env.template:
      - The .env file is intentionally ignored via .gitignore
      - This ensures credentials remain local and private
 
@@ -107,7 +106,7 @@ Once ingested, the Discogs data stored in SQL can be reused for a wide range of 
 If you choose to use Power BI for dashboarding efforts:
 
 1. Open Power BI Desktop
-2. Select Get Data -> SQL Server
+2. Select Get Data → SQL Server
 3. Enter your SQL Server instance and database
 4. Import tables directly or connect to SQL views
 5. Refresh data after rerunning the ingestion script
@@ -134,4 +133,3 @@ However, this project intentionally models the data in SQL Server to reflect bes
 Users who prefer a lighter-weight workflow may choose to query the Discogs API directly from tools such as Power Query. While suitable for quick exploration, this approach shifts transformation logic into the visualization layer and reduces reuse.
 
 This repository is designed to demonstrate a robust, extensible ingestion pattern that prioritizes clean data modeling while still allowing flexibility for alternative downstream workflows.
-
